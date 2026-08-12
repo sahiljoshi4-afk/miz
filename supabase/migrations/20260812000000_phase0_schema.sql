@@ -244,14 +244,9 @@ create policy correction_insert on public.correction for insert with check (exis
   where c.id = correction.cook_id and c.owner_id = auth.uid()
 ));
 
--- Storage: only the folder owner can read/write `cooks/{owner_id}/{cook_id}/1.jpg`.
-alter table storage.objects enable row level security;
-create policy cooks_bucket_read on storage.objects for select
-  using (bucket_id = 'cooks' and auth.uid()::text = (storage.foldername(name))[1]);
-create policy cooks_bucket_insert on storage.objects for insert
-  with check (bucket_id = 'cooks' and auth.uid()::text = (storage.foldername(name))[1]);
-create policy cooks_bucket_update on storage.objects for update
-  using (bucket_id = 'cooks' and auth.uid()::text = (storage.foldername(name))[1]);
+-- Storage policies for the 'cooks' bucket are created via the Supabase dashboard
+-- (Storage → cooks → Policies). Hosted Supabase forbids this DDL in migrations
+-- (permission denied to set role). Migration 20260813000001 asserts they exist.
 
 -- ---- Atomic server-side write path (used by the flush queue) ----
 -- Runs with the caller's role, so RLS still applies. Idempotent: retry-safe.
