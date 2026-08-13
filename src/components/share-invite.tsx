@@ -21,11 +21,16 @@ export function ShareInvite() {
     }).catch(() => null)
     setBusy(false)
     if (!res) return
-    if (res.status === 409) return setMessage("They haven't joined yet")
-    if (res.status === 400) return setMessage("That's you")
-    setEmail('')
-    setMessage("Invite sent — they'll see it on their next visit.")
-    router.refresh()
+    const json = await res.json().catch(() => ({}))
+    if (res.ok) {
+      setEmail('')
+      setMessage("Invite sent — they'll see it on their next visit.")
+      router.refresh()
+      return
+    }
+    if (json.error === 'self') return setMessage("That's you")
+    if (json.error === 'not_joined') return setMessage("They haven't joined yet")
+    setMessage('Something went wrong')
   }
 
   return (

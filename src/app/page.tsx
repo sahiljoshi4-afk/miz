@@ -113,7 +113,7 @@ export default async function Home({
                 href={`/?view=${s.grantor_id}`}
                 className={viewId === s.grantor_id ? active : idle}
               >
-                {nameOf.get(s.grantor_id) ?? 'Theirs'}&apos;s log
+                {nameOf.get(s.grantor_id) ?? 'Shared'}&apos;s log
               </Link>
             ))}
           </nav>
