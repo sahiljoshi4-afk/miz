@@ -62,7 +62,7 @@ export default async function CookPage({ params }: { params: Promise<{ id: strin
           <img src={photoUrl} alt="" className="aspect-[4/5] w-full object-cover" />
         </div>
       )}
-      {mainNote && <p className="mt-5 text-lg leading-snug">{mainNote}</p>}
+      {mainNote && <p className="mt-5 whitespace-pre-wrap text-lg leading-snug">{mainNote}</p>}
       {cleanedNote && cook.note_raw && (
         <p className="mt-4 font-mono text-xs text-graphite whitespace-pre-wrap">{cook.note_raw}</p>
       )}
