@@ -15,8 +15,11 @@ async function compressDraft(
   setSrc: (src: string) => void,
 ): Promise<void> {
   if (!draft.photoBlob) return
+  // Fallback type: HEIC blobs with an empty type (legacy iOS) would fail the
+  // library's /^image/ guard; output is forced to JPEG regardless.
+  const inputType = draft.photoBlob.type || 'image/jpeg'
   const compressed = await imageCompression(
-    new File([draft.photoBlob], 'photo.jpg', { type: draft.photoBlob.type }),
+    new File([draft.photoBlob], 'photo.jpg', { type: inputType }),
     {
       maxSizeMB: 1,
       maxWidthOrHeight: 1600,
@@ -55,7 +58,8 @@ function Capture() {
       setDraft(found)
       if (found.photoBlob) {
         setSrc(URL.createObjectURL(found.photoBlob))
-        void compressDraft(found, setSrc) // fire-and-forget; navigation stays instant
+        // fire-and-forget; navigation stays instant
+        void compressDraft(found, setSrc).catch((e) => console.warn('compress failed', e))
       }
     })()
   }, [id, router])
