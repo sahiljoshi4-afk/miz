@@ -3,4 +3,5 @@ export interface FeedItem {
   cookedAt: string
   note: string
   photoUrl: string | null
+  syncError?: string
 }

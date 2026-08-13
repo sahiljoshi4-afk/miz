@@ -34,7 +34,7 @@ export default async function Home() {
   )
 
   return (
-    <main className="mx-auto min-h-dvh max-w-md bg-paper px-5 pb-32 pt-5">
+    <main className="mx-auto min-h-dvh max-w-md bg-paper px-5 pb-12 pt-5">
       <header className="border-b border-hairline pb-5">
         <div className="flex items-baseline justify-between">
           <h1 className="font-display text-2xl font-semibold tracking-[-0.03em]">Mise</h1>
@@ -43,8 +43,8 @@ export default async function Home() {
           </p>
         </div>
       </header>
-      <Feed initialItems={items} />
       <CaptureButton />
+      <Feed initialItems={items} />
     </main>
   )
 }

@@ -50,6 +50,7 @@ export function Feed({ initialItems }: { initialItems: FeedItem[] }) {
         cookedAt: p.cookedAt,
         note: p.note,
         photoUrl: p.photoBlob ? URL.createObjectURL(p.photoBlob) : null,
+        syncError: p.syncError,
       }))
       queryClient.setQueryData<FeedItem[]>(['feed'], (old = []) => {
         const ids = new Set(old.map((o) => o.id))
@@ -61,7 +62,7 @@ export function Feed({ initialItems }: { initialItems: FeedItem[] }) {
 
   return (
     <div className="flex flex-col gap-12">
-      {items?.map((item) => <CookCard key={item.id} item={item} />)}
+      {items?.map((item) => <CookCard key={item.id} item={item} syncError={item.syncError} />)}
     </div>
   )
 }

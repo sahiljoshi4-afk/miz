@@ -6,6 +6,7 @@ export interface PendingCook {
   note: string
   cookedAt: string // ISO timestamp of capture
   status: 'draft' | 'ready'
+  syncError?: string // last flush error message, shown on the feed card while pending
 }
 
 class MiseDB extends Dexie {
