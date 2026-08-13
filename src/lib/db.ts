@@ -2,7 +2,7 @@ import Dexie, { type Table } from 'dexie'
 
 export interface PendingCook {
   id: string
-  photoBlob: Blob
+  photoBlob: Blob | null // null for note-only entries
   note: string
   cookedAt: string // ISO timestamp of capture
   status: 'draft' | 'ready'
@@ -19,7 +19,7 @@ class MiseDB extends Dexie {
 
 export const db = new MiseDB()
 
-export async function createDraft(photoBlob: Blob): Promise<string> {
+export async function createDraft(photoBlob: Blob | null): Promise<string> {
   const id = crypto.randomUUID()
   await db.pendingCooks.add({
     id,

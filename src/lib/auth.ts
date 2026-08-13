@@ -6,7 +6,7 @@ const allowed = (process.env.ALLOWED_EMAILS ?? '')
   .filter(Boolean)
 
 export function isAllowedEmail(email: string | undefined): boolean {
-  return !!email && allowed.includes(email.toLowerCase())
+  return !!email && allowed.includes(email.trim().toLowerCase())
 }
 
 export async function ensureProfile(

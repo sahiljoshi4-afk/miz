@@ -15,11 +15,13 @@ export async function flushPending(client: SupabaseClient): Promise<number> {
   const items = await pendingItems()
   let flushed = 0
   for (const item of items) {
-    const path = cookPhotoPath(data.user.id, item.id)
-    const { error: uploadError } = await client.storage
-      .from(COOKS_BUCKET)
-      .upload(path, item.photoBlob, { upsert: true })
-    if (uploadError) continue
+    const path = item.photoBlob ? cookPhotoPath(data.user.id, item.id) : null
+    if (item.photoBlob && path) {
+      const { error: uploadError } = await client.storage
+        .from(COOKS_BUCKET)
+        .upload(path, item.photoBlob, { upsert: true })
+      if (uploadError) continue
+    }
     const { error } = await client.rpc('create_cook', {
       p_cook_id: item.id,
       p_cooked_at: item.cookedAt,

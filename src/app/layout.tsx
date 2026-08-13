@@ -11,6 +11,7 @@ const mono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400', '500'], variabl
 export const metadata: Metadata = {
   title: 'Mise',
   description: 'A personal cooking log',
+  icons: { apple: [{ url: '/apple-touch-icon.png' }] },
   appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Mise' },
 }
 

@@ -49,7 +49,7 @@ export function Feed({ initialItems }: { initialItems: FeedItem[] }) {
         id: p.id,
         cookedAt: p.cookedAt,
         note: p.note,
-        photoUrl: URL.createObjectURL(p.photoBlob),
+        photoUrl: p.photoBlob ? URL.createObjectURL(p.photoBlob) : null,
       }))
       queryClient.setQueryData<FeedItem[]>(['feed'], (old = []) => {
         const ids = new Set(old.map((o) => o.id))

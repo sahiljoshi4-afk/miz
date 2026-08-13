@@ -75,6 +75,23 @@ describe('flushPending', () => {
     expect(await db.pendingCooks.count()).toBe(1)
   })
 
+  it('flushes a note-only row without any storage call', async () => {
+    await db.pendingCooks.add({
+      id: 'cook-1', photoBlob: null, note: 'dal', cookedAt: '2026-08-12T19:00:00Z', status: 'ready',
+    })
+    const client = mockClient()
+    const flushed = await flushPending(client)
+    expect(flushed).toBe(1)
+    expect(client.storage.from).not.toHaveBeenCalled()
+    expect(client.rpc).toHaveBeenCalledWith('create_cook', {
+      p_cook_id: 'cook-1',
+      p_cooked_at: '2026-08-12T19:00:00Z',
+      p_note: 'dal',
+      p_storage_path: null,
+    })
+    expect(await db.pendingCooks.count()).toBe(0)
+  })
+
   it('skips draft rows', async () => {
     await db.pendingCooks.add({
       id: 'cook-2', photoBlob: new Blob(['x']), note: '', cookedAt: '2026-08-12T19:00:00Z', status: 'draft',

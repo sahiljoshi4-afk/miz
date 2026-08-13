@@ -8,19 +8,22 @@ function Login() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const reason = useSearchParams().get('reason')
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
+    setError(null)
     if (!email) return
     setBusy(true)
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error: err } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: `${location.origin}/auth/callback` },
     })
     setBusy(false)
-    if (!error) setSent(true)
+    if (err) setError(err.message)
+    else setSent(true)
   }
 
   return (
@@ -32,7 +35,8 @@ function Login() {
       {sent ? (
         <p className="text-ink">Check your email — the link opens your log.</p>
       ) : (
-        <form onSubmit={submit} className="flex flex-col gap-3">
+        <>
+          <form onSubmit={submit} className="flex flex-col gap-3">
           <label htmlFor="email" className="sr-only">Email</label>
           <input
             id="email"
@@ -51,6 +55,8 @@ function Login() {
             {busy ? 'Sending…' : 'Send magic link'}
           </button>
         </form>
+          {error && <p className="text-graphite">{error}</p>}
+        </>
       )}
     </main>
   )

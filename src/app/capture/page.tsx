@@ -5,13 +5,14 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { flushPending } from '@/lib/queue'
-import { getDraft, saveDraft } from '@/lib/db'
+import { getDraft, saveDraft, type PendingCook } from '@/lib/db'
 import type { FeedItem } from '@/lib/feed'
 
 function Capture() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const id = useSearchParams().get('id')
+  const [draft, setDraft] = useState<PendingCook | null>(null)
   const [src, setSrc] = useState<string | null>(null)
   const [note, setNote] = useState('')
 
@@ -20,13 +21,20 @@ function Capture() {
       router.replace('/')
       return
     }
-    void getDraft(id).then((draft) => {
-      if (!draft) {
+    void (async () => {
+      const { data } = await createClient().auth.getUser()
+      if (!data.user) {
+        router.replace('/login')
+        return
+      }
+      const found = await getDraft(id)
+      if (!found) {
         router.replace('/')
         return
       }
-      setSrc(URL.createObjectURL(draft.photoBlob))
-    })
+      setDraft(found)
+      if (found.photoBlob) setSrc(URL.createObjectURL(found.photoBlob))
+    })()
   }, [id, router])
 
   async function save() {
@@ -34,7 +42,7 @@ function Capture() {
     await saveDraft(id, note)
     // Optimistic: the card is on the feed before the network knows.
     queryClient.setQueryData<FeedItem[]>(['feed'], (old = []) => [
-      { id, cookedAt: new Date().toISOString(), note, photoUrl: src },
+      { id, cookedAt: draft?.cookedAt ?? new Date().toISOString(), note, photoUrl: src },
       ...old,
     ])
     router.replace('/')
