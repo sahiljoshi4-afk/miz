@@ -1,12 +1,13 @@
 'use client'
 
 import { Suspense, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 function Login() {
-  const [email, setEmail] = useState('')
-  const [sent, setSent] = useState(false)
+  const router = useRouter()
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const reason = useSearchParams().get('reason')
@@ -14,16 +15,19 @@ function Login() {
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
-    if (!email) return
+    if (!username || !password) return
     setBusy(true)
+    const email = username.includes('@')
+      ? username.trim()
+      : `${username.trim()}@mise.app`
     const supabase = createClient()
-    const { error: err } = await supabase.auth.signInWithOtp({
+    const { error: err } = await supabase.auth.signInWithPassword({
       email,
-      options: { emailRedirectTo: `${location.origin}/auth/callback` },
+      password,
     })
     setBusy(false)
     if (err) setError(err.message)
-    else setSent(true)
+    else router.replace('/')
   }
 
   return (
@@ -32,32 +36,39 @@ function Login() {
       {reason === 'not-invited' && (
         <p className="text-graphite">This email isn&apos;t on the list yet.</p>
       )}
-      {sent ? (
-        <p className="text-ink">Check your email — the link opens your log.</p>
-      ) : (
-        <>
-          <form onSubmit={submit} className="flex flex-col gap-3">
-          <label htmlFor="email" className="sr-only">Email</label>
-          <input
-            id="email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            className="h-14 rounded-none border border-hairline bg-transparent px-4 text-lg text-ink placeholder:text-graphite"
-          />
-          <button
-            type="submit"
-            disabled={busy}
-            className="h-14 bg-ink text-paper disabled:opacity-50"
-          >
-            {busy ? 'Sending…' : 'Send magic link'}
-          </button>
-        </form>
-          {error && <p className="text-graphite">{error}</p>}
-        </>
-      )}
+      <form onSubmit={submit} className="flex flex-col gap-3">
+        <label htmlFor="username" className="sr-only">Username</label>
+        <input
+          id="username"
+          required
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Username"
+          autoCapitalize="none"
+          autoCorrect="off"
+          autoComplete="username"
+          className="h-14 rounded-none border border-hairline bg-transparent px-4 text-lg text-ink placeholder:text-graphite"
+        />
+        <label htmlFor="password" className="sr-only">Password</label>
+        <input
+          id="password"
+          type="password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+          autoComplete="current-password"
+          className="h-14 rounded-none border border-hairline bg-transparent px-4 text-lg text-ink placeholder:text-graphite"
+        />
+        <button
+          type="submit"
+          disabled={busy}
+          className="h-14 bg-ink text-paper disabled:opacity-50"
+        >
+          {busy ? 'Signing in…' : 'Sign in'}
+        </button>
+      </form>
+      {error && <p className="text-graphite">{error}</p>}
     </main>
   )
 }
