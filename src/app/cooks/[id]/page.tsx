@@ -18,10 +18,16 @@ export default async function CookPage({ params }: { params: Promise<{ id: strin
 
   const { data: cook } = await supabase
     .from('cook')
-    .select('id, cooked_at, note_raw, photo(storage_path), dish(canonical_name, cuisine)')
+    .select('id, cooked_at, note_raw, extraction, photo(storage_path), dish(canonical_name, cuisine)')
     .eq('id', id)
     .maybeSingle()
   if (!cook) notFound()
+
+  const cleanedNote =
+    typeof cook.extraction?.cleaned_note === 'string' && cook.extraction.cleaned_note.length > 0
+      ? cook.extraction.cleaned_note
+      : null
+  const mainNote = cleanedNote ?? cook.note_raw
 
   const { dishName, cuisine } = dishMeta(cook.dish)
   const photo = cook.photo?.[0]
@@ -56,7 +62,10 @@ export default async function CookPage({ params }: { params: Promise<{ id: strin
           <img src={photoUrl} alt="" className="aspect-[4/5] w-full object-cover" />
         </div>
       )}
-      {cook.note_raw && <p className="mt-5 text-lg leading-snug">{cook.note_raw}</p>}
+      {mainNote && <p className="mt-5 text-lg leading-snug">{mainNote}</p>}
+      {cleanedNote && cook.note_raw && (
+        <p className="mt-4 font-mono text-xs text-graphite whitespace-pre-wrap">{cook.note_raw}</p>
+      )}
       <p className="mt-2 font-mono text-[0.7rem] text-graphite">
         <CookDate iso={cook.cooked_at} />
       </p>

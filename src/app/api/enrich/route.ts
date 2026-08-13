@@ -20,16 +20,30 @@ type Extraction = {
   ingredients: { name: string; amount: string }[]
   techniques: string[]
   confidence: { dish_name: 'high' | 'medium' | 'low'; cuisine: 'high' | 'medium' | 'low' }
+  cleaned_note: string
 }
 
 const ENRICH_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['dish_name', 'cuisine', 'sub_region', 'ingredients', 'techniques', 'confidence'],
+  required: [
+    'dish_name',
+    'cuisine',
+    'sub_region',
+    'ingredients',
+    'techniques',
+    'confidence',
+    'cleaned_note',
+  ],
   properties: {
     dish_name: { type: 'string' },
     cuisine: { type: 'string' },
     sub_region: { type: 'string' },
+    cleaned_note: {
+      type: 'string',
+      description:
+        'The note rewritten: dictation mishearings corrected (e.g. "Singaporg" → "Singapore"), punctuation restored, structured as short bullet points ("• …") when the note contains multiple points. Keep the cook\'s own wording otherwise. Empty string if the note is empty.',
+    },
     ingredients: {
       type: 'array',
       items: {
@@ -56,10 +70,10 @@ const ENRICH_SCHEMA = {
 }
 
 const ENRICH_PROMPT = (note: string) =>
-  `You are classifying a home cook's meal. From the note (and photo), extract the dish. Be specific and honest: 'Singapore black pepper prawns' not 'seafood'. Use the cook's own vocabulary. Unknown values: empty string / empty array, never invented. Note: ${note}`
+  `You are classifying a home cook's meal. From the note (and photo), extract the dish. Be specific and honest: 'Singapore black pepper prawns' not 'seafood'. Use the cook's own vocabulary. Unknown values: empty string / empty array, never invented. Also rewrite the note as \`cleaned_note\`: fix dictation errors, restore punctuation, and structure it as bullets when it has multiple points. Note: ${note}`
 
 const DEEPSEEK_SYSTEM =
-  "You are classifying a home cook's meal. From the note, extract the dish. Be specific and honest: 'Singapore black pepper prawns' not 'seafood'. Use the cook's own vocabulary. Unknown values: empty string / empty array, never invented. Respond in JSON."
+  "You are classifying a home cook's meal. From the note, extract the dish. Be specific and honest: 'Singapore black pepper prawns' not 'seafood'. Use the cook's own vocabulary. Unknown values: empty string / empty array, never invented. Also rewrite the note as `cleaned_note`: fix dictation errors, restore punctuation, and structure it as bullets when it has multiple points. Respond in JSON."
 
 const anthropic = new Anthropic()
 
@@ -144,11 +158,12 @@ async function enrichCook(
         .limit(1)
       dishId = existing?.[0]?.id ?? null
       if (!dishId) {
-        const { data: inserted } = await supabase
+        const { data: inserted, error: insertError } = await supabase
           .from('dish')
           .insert({ canonical_name: dishName, cuisine: extraction.cuisine, sub_region: extraction.sub_region })
           .select('id')
           .single()
+        if (insertError) throw insertError // failed -> enrichment_status='failed' in the catch
         dishId = inserted?.id ?? null
       }
     }

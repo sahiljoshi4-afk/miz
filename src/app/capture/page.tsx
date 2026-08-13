@@ -79,7 +79,7 @@ function Capture() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ cookId: id }),
-        })
+        }).catch(() => {})
       }
     })
   }

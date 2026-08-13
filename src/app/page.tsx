@@ -16,8 +16,8 @@ export default async function Home() {
 
   const { data: cooks } = await supabase
     .from('cook')
-    .select('id, cooked_at, note_raw, photo(storage_path), dish(canonical_name, cuisine)')
-    .order('cooked_at', { ascending: false })
+    .select('id, cooked_at, created_at, note_raw, photo(storage_path), dish(canonical_name, cuisine)')
+    .order('created_at', { ascending: false })
 
   const items: FeedItem[] = await Promise.all(
     (cooks ?? []).map(async (c) => {

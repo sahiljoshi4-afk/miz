@@ -12,8 +12,8 @@ async function fetchFeed(): Promise<FeedItem[]> {
   const supabase = createClient()
   const { data } = await supabase
     .from('cook')
-    .select('id, cooked_at, note_raw, photo(storage_path), dish(canonical_name, cuisine)')
-    .order('cooked_at', { ascending: false })
+    .select('id, cooked_at, created_at, note_raw, photo(storage_path), dish(canonical_name, cuisine)')
+    .order('created_at', { ascending: false })
   return Promise.all(
     (data ?? []).map(async (c): Promise<FeedItem> => {
       const photo = c.photo?.[0]
@@ -67,7 +67,7 @@ export function Feed({ initialItems }: { initialItems: FeedItem[] }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: '{}',
-      })
+      }).catch(() => {})
       setTimeout(() => {
         void queryClient.refetchQueries({ queryKey: ['feed'] })
       }, 25000)
