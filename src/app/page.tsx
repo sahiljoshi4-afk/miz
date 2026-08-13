@@ -4,7 +4,7 @@ import { ensureProfile, isAllowedEmail } from '@/lib/auth'
 import { COOKS_BUCKET } from '@/lib/queue'
 import { Feed } from '@/components/feed'
 import { CaptureButton } from '@/components/capture-button'
-import type { FeedItem } from '@/lib/feed'
+import { dishMeta, type FeedItem } from '@/lib/feed'
 
 const SIGNED_URL_SECONDS = 60 * 60 * 24 * 7 // 7 days; refreshed whenever the feed refetches
 
@@ -16,7 +16,7 @@ export default async function Home() {
 
   const { data: cooks } = await supabase
     .from('cook')
-    .select('id, cooked_at, note_raw, photo(storage_path)')
+    .select('id, cooked_at, note_raw, photo(storage_path), dish(canonical_name, cuisine)')
     .order('cooked_at', { ascending: false })
 
   const items: FeedItem[] = await Promise.all(
@@ -29,7 +29,13 @@ export default async function Home() {
           .createSignedUrl(photo.storage_path, SIGNED_URL_SECONDS)
         photoUrl = signed?.signedUrl ?? null
       }
-      return { id: c.id, cookedAt: c.cooked_at, note: c.note_raw, photoUrl }
+      return {
+        id: c.id,
+        cookedAt: c.cooked_at,
+        note: c.note_raw,
+        photoUrl,
+        ...dishMeta(c.dish),
+      }
     }),
   )
 
@@ -43,8 +49,8 @@ export default async function Home() {
           </p>
         </div>
       </header>
-      <CaptureButton />
       <Feed initialItems={items} />
+      <CaptureButton />
     </main>
   )
 }

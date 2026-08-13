@@ -1,7 +1,8 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import exifr from 'exifr'
 import { createDraft } from '@/lib/db'
 
 export function CaptureButton() {
@@ -9,10 +10,46 @@ export function CaptureButton() {
   const libraryInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const [error, setError] = useState(false)
+  const [open, setOpen] = useState(false)
+  const [visible, setVisible] = useState(true)
+
+  // Scroll-aware FAB: fade out while scrolling, back ~250ms after it stops.
+  // Reduced motion: skip the transitions entirely, stay visible.
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const onScroll = () => {
+      setVisible(false)
+      clearTimeout(timer)
+      timer = setTimeout(() => setVisible(true), 250)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      clearTimeout(timer)
+    }
+  }, [])
+
+  // Sheet closes on Escape
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
 
   async function start(file: Blob) {
     try {
-      const id = await createDraft(file) // capture writes to IndexedDB first (rule #2)
+      let cookedAt: string | undefined
+      try {
+        const exif = await exifr.parse(file, { pick: ['DateTimeOriginal'] })
+        if (exif?.DateTimeOriginal instanceof Date) cookedAt = exif.DateTimeOriginal.toISOString()
+      } catch {
+        // EXIF must never block capture — fall back to now
+      }
+      const id = await createDraft(file, cookedAt) // capture writes to IndexedDB first (rule #2)
       router.push(`/capture?id=${id}`)
     } catch {
       setError(true)
@@ -27,24 +64,46 @@ export function CaptureButton() {
   }
 
   return (
-    <div>
-      {error && (
-        <p className="pb-2 text-center text-sm text-graphite">Couldn&apos;t save the draft — try again</p>
+    <div
+      className={`fixed right-5 bottom-[max(env(safe-area-inset-bottom),1.25rem)] z-10 transition-opacity ${visible ? 'opacity-100' : 'opacity-0'}`}
+    >
+      {open && (
+        <>
+          <button
+            aria-label="Close capture menu"
+            tabIndex={-1}
+            className="fixed inset-0 z-10 cursor-default"
+            onClick={() => setOpen(false)}
+          />
+          <div className="absolute bottom-16 right-0 z-20 flex w-44 flex-col gap-2 rounded-none border border-hairline bg-paper p-2">
+            {error && (
+              <p className="px-1 text-sm text-graphite">Couldn&apos;t save the draft — try again</p>
+            )}
+            <button
+              onClick={() => cameraInputRef.current?.click()}
+              className="h-12 bg-ink text-lg text-paper"
+            >
+              Take photo
+            </button>
+            <button
+              onClick={() => libraryInputRef.current?.click()}
+              className="h-12 border border-ink text-lg text-ink"
+            >
+              Upload
+            </button>
+          </div>
+        </>
       )}
-      <div className="flex gap-2">
-        <button
-          onClick={() => libraryInputRef.current?.click()}
-          className="h-11 flex-1 border border-ink text-lg text-ink"
-        >
-          Upload
-        </button>
-        <button
-          onClick={() => cameraInputRef.current?.click()}
-          className="h-11 flex-1 bg-ink text-lg text-paper"
-        >
-          Capture
-        </button>
-      </div>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-label="Log a new cook"
+        aria-expanded={open}
+        className="relative z-20 flex h-14 w-14 items-center justify-center rounded-full bg-ink text-2xl leading-none text-paper shadow-lg"
+      >
+        <span aria-hidden className="-mt-0.5">
+          +
+        </span>
+      </button>
       <input
         ref={cameraInputRef}
         type="file"

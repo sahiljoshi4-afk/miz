@@ -4,6 +4,8 @@ import { createServerClient } from '@/lib/supabase/server'
 import { ensureProfile, isAllowedEmail } from '@/lib/auth'
 import { COOKS_BUCKET } from '@/lib/queue'
 import { CookDate } from '@/components/cook-date'
+import { CuisineTag } from '@/components/cuisine-tag'
+import { dishMeta } from '@/lib/feed'
 
 const SIGNED_URL_SECONDS = 60 * 60 * 24 * 7 // 7 days; refreshed whenever the feed refetches
 
@@ -16,11 +18,12 @@ export default async function CookPage({ params }: { params: Promise<{ id: strin
 
   const { data: cook } = await supabase
     .from('cook')
-    .select('id, cooked_at, note_raw, photo(storage_path)')
+    .select('id, cooked_at, note_raw, photo(storage_path), dish(canonical_name, cuisine)')
     .eq('id', id)
     .maybeSingle()
   if (!cook) notFound()
 
+  const { dishName, cuisine } = dishMeta(cook.dish)
   const photo = cook.photo?.[0]
   let photoUrl: string | null = null
   if (photo) {
@@ -40,6 +43,14 @@ export default async function CookPage({ params }: { params: Promise<{ id: strin
           ← Mise
         </Link>
       </header>
+      {dishName && (
+        <h1 className="mt-5 font-display text-3xl font-medium tracking-[-0.025em]">{dishName}</h1>
+      )}
+      {cuisine && (
+        <div className="mt-2">
+          <CuisineTag cuisine={cuisine} />
+        </div>
+      )}
       {photoUrl && (
         <div className="mt-5 overflow-hidden bg-hairline">
           <img src={photoUrl} alt="" className="aspect-[4/5] w-full object-cover" />

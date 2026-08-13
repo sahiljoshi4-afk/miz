@@ -20,13 +20,13 @@ class MiseDB extends Dexie {
 
 export const db = new MiseDB()
 
-export async function createDraft(photoBlob: Blob | null): Promise<string> {
+export async function createDraft(photoBlob: Blob | null, cookedAt?: string): Promise<string> {
   const id = crypto.randomUUID()
   await db.pendingCooks.add({
     id,
     photoBlob,
     note: '',
-    cookedAt: new Date().toISOString(),
+    cookedAt: cookedAt ?? new Date().toISOString(),
     status: 'draft',
   })
   return id

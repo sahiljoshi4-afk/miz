@@ -6,13 +6,13 @@ import { createClient } from '@/lib/supabase/client'
 import { flushPending, COOKS_BUCKET } from '@/lib/queue'
 import { pendingItems } from '@/lib/db'
 import { CookCard } from './cook-card'
-import type { FeedItem } from '@/lib/feed'
+import { dishMeta, type FeedItem } from '@/lib/feed'
 
 async function fetchFeed(): Promise<FeedItem[]> {
   const supabase = createClient()
   const { data } = await supabase
     .from('cook')
-    .select('id, cooked_at, note_raw, photo(storage_path)')
+    .select('id, cooked_at, note_raw, photo(storage_path), dish(canonical_name, cuisine)')
     .order('cooked_at', { ascending: false })
   return Promise.all(
     (data ?? []).map(async (c): Promise<FeedItem> => {
@@ -24,7 +24,13 @@ async function fetchFeed(): Promise<FeedItem[]> {
           .createSignedUrl(photo.storage_path, 60 * 60 * 24 * 7)
         photoUrl = signed?.signedUrl ?? null
       }
-      return { id: c.id, cookedAt: c.cooked_at, note: c.note_raw, photoUrl }
+      return {
+        id: c.id,
+        cookedAt: c.cooked_at,
+        note: c.note_raw,
+        photoUrl,
+        ...dishMeta(c.dish),
+      }
     }),
   )
 }
