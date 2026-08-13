@@ -11,7 +11,7 @@ export function CookCard({
 }: {
   item: FeedItem
   syncError?: string
-  onDiscard?: (id: string) => void
+  onDiscard?: (id: string) => Promise<void>
 }) {
   const cuisine = item.cuisine ?? null
   const body = (
@@ -58,7 +58,7 @@ export function CookCard({
               className="ml-2 font-mono text-[0.65rem] uppercase tracking-[0.08em] text-graphite underline decoration-hairline"
               onClick={(e) => {
                 e.preventDefault()
-                onDiscard(item.id)
+                void onDiscard(item.id)?.catch(() => {})
               }}
             >
               Discard
