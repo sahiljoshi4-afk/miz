@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   const { error } = await supabase.from('view_share').insert({
     grantor_id: user.id,
     grantee_id: target.id,
-    status: 'pending',
+    status: 'accepted',
   })
   if (error?.code === '23505') return Response.json({ ok: true, duplicate: true })
   if (error) return Response.json({ error: 'insert_failed' }, { status: 400 })
