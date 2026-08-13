@@ -16,6 +16,9 @@ export async function ensureProfile(
   if (data.user) {
     await supabase
       .from('profile')
-      .upsert({ id: data.user.id }, { onConflict: 'id', ignoreDuplicates: true })
+      .upsert(
+        { id: data.user.id, display_name: data.user.email?.split('@')[0] ?? null },
+        { onConflict: 'id', ignoreDuplicates: true },
+      )
   }
 }
