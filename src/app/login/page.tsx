@@ -15,19 +15,22 @@ function Login() {
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
-    if (!username || !password) return
+    if (!username.trim() || !password) return
     setBusy(true)
     const email = username.includes('@')
       ? username.trim()
       : `${username.trim()}@mise.app`
     const supabase = createClient()
-    const { error: err } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    setBusy(false)
-    if (err) setError(err.message)
-    else router.replace('/')
+    try {
+      const { error: err } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      if (err) setError(err.message)
+      else router.replace('/')
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
