@@ -168,9 +168,11 @@ async function enrichCook(
       }
     }
 
+    const tags = Array.from(new Set((extraction.ingredients ?? []).map((i: { name?: string }) => (i?.name ?? '').trim()).filter(Boolean))).slice(0, 8)
+
     const { error } = await supabase
       .from('cook')
-      .update({ extraction, enrichment_status: 'done', dish_id: dishId })
+      .update({ extraction, enrichment_status: 'done', dish_id: dishId, tags })
       .eq('id', cook.id)
     if (error) throw error
     return dishName

@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { flushPending, COOKS_BUCKET } from '@/lib/queue'
-import { pendingItems } from '@/lib/db'
+import { db, pendingItems } from '@/lib/db'
 import { CookCard } from './cook-card'
 import { dishMeta, type FeedItem } from '@/lib/feed'
 
@@ -12,7 +12,7 @@ async function fetchFeed(): Promise<FeedItem[]> {
   const supabase = createClient()
   const { data } = await supabase
     .from('cook')
-    .select('id, cooked_at, created_at, note_raw, photo(storage_path), dish(canonical_name, cuisine)')
+    .select('id, cooked_at, created_at, note_raw, tags, photo(storage_path), dish(canonical_name, cuisine)')
     .order('created_at', { ascending: false })
   return Promise.all(
     (data ?? []).map(async (c): Promise<FeedItem> => {
@@ -29,6 +29,7 @@ async function fetchFeed(): Promise<FeedItem[]> {
         cookedAt: c.cooked_at,
         note: c.note_raw,
         photoUrl,
+        tags: c.tags ?? [],
         ...dishMeta(c.dish),
       }
     }),
@@ -77,7 +78,19 @@ export function Feed({ initialItems }: { initialItems: FeedItem[] }) {
 
   return (
     <div className="flex flex-col gap-12">
-      {items?.map((item) => <CookCard key={item.id} item={item} syncError={item.syncError} />)}
+      {items?.map((item) => (
+        <CookCard
+          key={item.id}
+          item={item}
+          syncError={item.syncError}
+          onDiscard={async (id) => {
+            await db.pendingCooks.delete(id)
+            queryClient.setQueryData<FeedItem[]>(['feed'], (old = []) =>
+              old.filter((f) => f.id !== id),
+            )
+          }}
+        />
+      ))}
     </div>
   )
 }

@@ -5,6 +5,7 @@ export interface FeedItem {
   photoUrl: string | null
   dishName?: string | null
   cuisine?: string | null
+  tags?: string[]
   syncError?: string
 }
 

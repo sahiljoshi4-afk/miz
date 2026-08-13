@@ -18,7 +18,7 @@ export default async function CookPage({ params }: { params: Promise<{ id: strin
 
   const { data: cook } = await supabase
     .from('cook')
-    .select('id, cooked_at, note_raw, extraction, photo(storage_path), dish(canonical_name, cuisine)')
+    .select('id, cooked_at, note_raw, tags, extraction, photo(storage_path), dish(canonical_name, cuisine)')
     .eq('id', id)
     .maybeSingle()
   if (!cook) notFound()
@@ -63,12 +63,26 @@ export default async function CookPage({ params }: { params: Promise<{ id: strin
         </div>
       )}
       {mainNote && <p className="mt-5 whitespace-pre-wrap text-lg leading-snug">{mainNote}</p>}
-      {cleanedNote && cook.note_raw && (
-        <p className="mt-4 font-mono text-xs text-graphite whitespace-pre-wrap">{cook.note_raw}</p>
-      )}
       <p className="mt-2 font-mono text-[0.7rem] text-graphite">
         <CookDate iso={cook.cooked_at} />
       </p>
+      {cook.tags?.length ? (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {(cook.tags as string[]).map((tag) => (
+            <span
+              key={tag}
+              className="border border-hairline px-1.5 py-0.5 font-mono text-[0.65rem] uppercase tracking-[0.08em] text-graphite"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {cook.extraction?.techniques?.length ? (
+        <p className="mt-3 font-mono text-[0.7rem] text-graphite">
+          Techniques: {cook.extraction.techniques.join(', ')}
+        </p>
+      ) : null}
     </main>
   )
 }

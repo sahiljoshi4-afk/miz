@@ -4,10 +4,18 @@ import { cuisineColor } from '@/lib/cuisine'
 import { CuisineTag } from '@/components/cuisine-tag'
 import { CookDate } from '@/components/cook-date'
 
-export function CookCard({ item, syncError }: { item: FeedItem; syncError?: string }) {
+export function CookCard({
+  item,
+  syncError,
+  onDiscard,
+}: {
+  item: FeedItem
+  syncError?: string
+  onDiscard?: (id: string) => void
+}) {
   const cuisine = item.cuisine ?? null
-  return (
-    <Link href={`/cooks/${item.id}`} className="block">
+  const body = (
+    <>
       {item.photoUrl && (
         <div className="overflow-hidden bg-hairline">
           <img src={item.photoUrl} alt="" className="aspect-[4/5] w-full object-cover" />
@@ -29,9 +37,44 @@ export function CookCard({ item, syncError }: { item: FeedItem; syncError?: stri
           </span>
         </div>
       </div>
+      {item.tags?.length ? (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {item.tags.slice(0, 2).map((tag) => (
+            <span
+              key={tag}
+              className="border border-hairline px-1.5 py-0.5 font-mono text-[0.65rem] uppercase tracking-[0.08em] text-graphite"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      ) : null}
       {syncError && (
-        <p className="mt-1 font-mono text-[0.65rem] text-graphite">unsynced · {syncError}</p>
+        <p className="mt-1 font-mono text-[0.65rem] text-graphite">
+          unsynced · {syncError}
+          {onDiscard && (
+            <button
+              type="button"
+              className="ml-2 font-mono text-[0.65rem] uppercase tracking-[0.08em] text-graphite underline decoration-hairline"
+              onClick={(e) => {
+                e.preventDefault()
+                onDiscard(item.id)
+              }}
+            >
+              Discard
+            </button>
+          )}
+        </p>
       )}
+    </>
+  )
+  // Unsynced (pending) cards aren't server rows yet — the detail page doesn't
+  // exist for them, so a Link would 404.
+  return syncError ? (
+    <article className="block">{body}</article>
+  ) : (
+    <Link href={`/cooks/${item.id}`} className="block">
+      {body}
     </Link>
   )
 }

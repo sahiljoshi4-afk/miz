@@ -16,7 +16,7 @@ export default async function Home() {
 
   const { data: cooks } = await supabase
     .from('cook')
-    .select('id, cooked_at, created_at, note_raw, photo(storage_path), dish(canonical_name, cuisine)')
+    .select('id, cooked_at, created_at, note_raw, tags, photo(storage_path), dish(canonical_name, cuisine)')
     .order('created_at', { ascending: false })
 
   const items: FeedItem[] = await Promise.all(
@@ -34,6 +34,7 @@ export default async function Home() {
         cookedAt: c.cooked_at,
         note: c.note_raw,
         photoUrl,
+        tags: c.tags ?? [],
         ...dishMeta(c.dish),
       }
     }),
