@@ -73,7 +73,15 @@ function Capture() {
       ...old,
     ])
     router.replace('/')
-    void flushPending(createClient())
+    void flushPending(createClient()).then((n) => {
+      if (n > 0) {
+        void fetch('/api/enrich', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cookId: id }),
+        })
+      }
+    })
   }
 
   return (

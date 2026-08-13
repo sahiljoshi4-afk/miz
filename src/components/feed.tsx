@@ -62,6 +62,15 @@ export function Feed({ initialItems }: { initialItems: FeedItem[] }) {
         const ids = new Set(old.map((o) => o.id))
         return [...pendingFeed.filter((p) => !ids.has(p.id)), ...old]
       })
+      // Fire-and-forget sweep; the card updates when enrichment lands.
+      void fetch('/api/enrich', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      })
+      setTimeout(() => {
+        void queryClient.refetchQueries({ queryKey: ['feed'] })
+      }, 25000)
     }
     void sync()
   }, [queryClient])
