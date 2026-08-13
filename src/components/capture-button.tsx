@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { createDraft } from '@/lib/db'
 
 export function CaptureButton() {
-  const inputRef = useRef<HTMLInputElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const libraryInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const [error, setError] = useState(false)
 
@@ -32,12 +33,20 @@ export function CaptureButton() {
           <p className="pb-2 text-center text-sm text-graphite">Couldn&apos;t save the draft — try again</p>
         )}
         <div className="flex flex-col gap-2">
-          <button
-            onClick={() => inputRef.current?.click()}
-            className="h-16 w-full bg-ink text-lg text-paper"
-          >
-            Capture
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => libraryInputRef.current?.click()}
+              className="h-16 flex-1 border border-ink text-lg text-ink"
+            >
+              Upload
+            </button>
+            <button
+              onClick={() => cameraInputRef.current?.click()}
+              className="h-16 flex-1 bg-ink text-lg text-paper"
+            >
+              Capture
+            </button>
+          </div>
           <button
             onClick={() => void start(null)}
             className="h-16 w-full border border-ink text-lg text-ink"
@@ -47,10 +56,17 @@ export function CaptureButton() {
         </div>
       </div>
       <input
-        ref={inputRef}
+        ref={cameraInputRef}
         type="file"
         accept="image/*"
         capture="environment"
+        className="hidden"
+        onChange={onFile}
+      />
+      <input
+        ref={libraryInputRef}
+        type="file"
+        accept="image/*"
         className="hidden"
         onChange={onFile}
       />
