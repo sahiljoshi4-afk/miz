@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase/server'
 import { ensureProfile, isAllowedEmail } from '@/lib/auth'
 import { COOKS_BUCKET } from '@/lib/queue'
+import { CookDate } from '@/components/cook-date'
 
 const SIGNED_URL_SECONDS = 60 * 60 * 24 * 7 // 7 days; refreshed whenever the feed refetches
 
@@ -29,11 +30,6 @@ export default async function CookPage({ params }: { params: Promise<{ id: strin
     photoUrl = signed?.signedUrl ?? null
   }
 
-  const when = new Date(cook.cooked_at)
-  const whenLabel =
-    `${when.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}` +
-    ` · ${when.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`
-
   return (
     <main className="mx-auto min-h-dvh max-w-md bg-paper px-5 pb-12 pt-5">
       <header className="border-b border-hairline pb-5">
@@ -50,7 +46,9 @@ export default async function CookPage({ params }: { params: Promise<{ id: strin
         </div>
       )}
       {cook.note_raw && <p className="mt-5 text-lg leading-snug">{cook.note_raw}</p>}
-      <p className="mt-2 font-mono text-[0.7rem] text-graphite">{whenLabel}</p>
+      <p className="mt-2 font-mono text-[0.7rem] text-graphite">
+        <CookDate iso={cook.cooked_at} />
+      </p>
     </main>
   )
 }
