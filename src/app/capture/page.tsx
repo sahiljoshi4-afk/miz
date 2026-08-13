@@ -5,8 +5,28 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { flushPending } from '@/lib/queue'
-import { getDraft, saveDraft, type PendingCook } from '@/lib/db'
+import { db, getDraft, saveDraft, type PendingCook } from '@/lib/db'
 import type { FeedItem } from '@/lib/feed'
+import imageCompression from 'browser-image-compression'
+
+// HEIC/HEIF breaks in <img> from blob URLs; normalize everything to JPEG.
+async function compressDraft(
+  draft: PendingCook,
+  setSrc: (src: string) => void,
+): Promise<void> {
+  if (!draft.photoBlob) return
+  const compressed = await imageCompression(
+    new File([draft.photoBlob], 'photo.jpg', { type: draft.photoBlob.type }),
+    {
+      maxSizeMB: 1,
+      maxWidthOrHeight: 1600,
+      useWebWorker: false, // main thread — WebKit PWA workers are flaky; 1-2s while typing
+      fileType: 'image/jpeg',
+    },
+  )
+  await db.pendingCooks.update(draft.id, { photoBlob: compressed })
+  setSrc(URL.createObjectURL(compressed)) // swap the thumbnail once the JPEG is ready
+}
 
 function Capture() {
   const router = useRouter()
@@ -33,7 +53,10 @@ function Capture() {
         return
       }
       setDraft(found)
-      if (found.photoBlob) setSrc(URL.createObjectURL(found.photoBlob))
+      if (found.photoBlob) {
+        setSrc(URL.createObjectURL(found.photoBlob))
+        void compressDraft(found, setSrc) // fire-and-forget; navigation stays instant
+      }
     })()
   }, [id, router])
 
