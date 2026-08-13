@@ -35,8 +35,13 @@ export default async function Home() {
 
   return (
     <main className="mx-auto min-h-dvh max-w-md bg-paper px-5 pb-32 pt-5">
-      <header className="mb-8">
-        <h1 className="font-display text-3xl text-ink">Mise</h1>
+      <header className="border-b border-hairline pb-5">
+        <div className="flex items-baseline justify-between">
+          <h1 className="font-display text-2xl font-semibold tracking-[-0.03em]">Mise</h1>
+          <p className="font-mono text-[0.7rem] uppercase tracking-[0.16em] text-graphite">
+            {items.length} cooks
+          </p>
+        </div>
       </header>
       <Feed initialItems={items} />
       <CaptureButton />

@@ -60,7 +60,7 @@ export function Feed({ initialItems }: { initialItems: FeedItem[] }) {
   }, [queryClient])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-12">
       {items?.map((item) => <CookCard key={item.id} item={item} />)}
     </div>
   )
