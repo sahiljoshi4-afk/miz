@@ -5,8 +5,6 @@ import { ensureProfile, isAllowedEmail } from '@/lib/auth'
 import { COOKS_BUCKET } from '@/lib/queue'
 import { Feed } from '@/components/feed'
 import { CaptureButton } from '@/components/capture-button'
-import { ShareBanner } from '@/components/share-banner'
-import { ShareInvite } from '@/components/share-invite'
 import { dishMeta, type FeedItem } from '@/lib/feed'
 
 const SIGNED_URL_SECONDS = 60 * 60 * 24 * 7 // 7 days; refreshed whenever the feed refetches
@@ -54,27 +52,16 @@ export default async function Home({
   await ensureProfile(supabase)
   const user = data.user
 
-  const { data: myShares } = await supabase
-    .from('view_share')
-    .select('grantor_id, status')
-    .eq('grantee_id', user.id)
-  const shares = myShares ?? []
-  const accepted = shares.filter((s) => s.status === 'accepted')
-  const pending = shares.filter((s) => s.status === 'pending')
-
-  // Profile RLS only exposes rows to sharing participants (or self); the
-  // grantee is a participant, so grantor names resolve here.
-  const grantorIds = shares.map((s) => s.grantor_id)
-  const { data: grantors } = grantorIds.length
-    ? await supabase.from('profile').select('id, display_name').in('id', grantorIds)
-    : { data: [] }
-  const nameOf = new Map((grantors ?? []).map((p) => [p.id, p.display_name]))
+  // Communal by default: every member (anyone who has logged in once) appears
+  // in the selector; any member may view any log, read-only.
+  const { data: memberRows } = await supabase.rpc('list_profiles')
+  const others = ((memberRows ?? []) as { id: string; display_name: string | null }[]).filter(
+    (m) => m.id !== user.id,
+  )
 
   const view = (await searchParams).view
-  const acceptedIds = new Set(accepted.map((s) => s.grantor_id))
-  const viewId = view ? (acceptedIds.has(view) ? view : null) : undefined
-  if (viewId === null) redirect('/')
-  const shared = !!viewId
+  const viewId = view && others.some((m) => m.id === view) ? view : undefined
+  if (view && viewId === undefined) redirect('/')
 
   const items = await fetchItems(supabase, viewId)
 
@@ -84,43 +71,32 @@ export default async function Home({
 
   return (
     <main className="mx-auto min-h-dvh max-w-md bg-paper px-5 pb-12 pt-5">
-      {!shared && pending.length > 0 && (
-        <ShareBanner
-          pending={pending.map((s) => ({
-            id: s.grantor_id,
-            name: nameOf.get(s.grantor_id) ?? 'someone',
-          }))}
-        />
-      )}
-      <header className={accepted.length > 0 ? '' : 'border-b border-hairline pb-5'}>
+      <header className={others.length > 0 ? '' : 'border-b border-hairline pb-5'}>
         <div className="flex items-baseline justify-between">
           <h1 className="font-display text-2xl font-semibold tracking-[-0.03em]">Mise</h1>
-          <div className="flex items-baseline gap-4">
-            {!shared && <ShareInvite />}
-            <p className="font-mono text-[0.7rem] uppercase tracking-[0.16em] text-graphite">
-              {items.length} cooks
-            </p>
-          </div>
+          <p className="font-mono text-[0.7rem] uppercase tracking-[0.16em] text-graphite">
+            {items.length} cooks
+          </p>
         </div>
-        {accepted.length > 0 && (
+        {others.length > 0 && (
           <nav className="flex gap-1 border-b border-hairline pb-2 mb-4">
-            <Link href="/" className={shared ? idle : active}>
+            <Link href="/" className={viewId ? idle : active}>
               My log
             </Link>
-            {accepted.map((s) => (
+            {others.map((m) => (
               <Link
-                key={s.grantor_id}
-                href={`/?view=${s.grantor_id}`}
-                className={viewId === s.grantor_id ? active : idle}
+                key={m.id}
+                href={`/?view=${m.id}`}
+                className={viewId === m.id ? active : idle}
               >
-                {nameOf.get(s.grantor_id) ?? 'Shared'}&apos;s log
+                {m.display_name ?? 'Shared'}&apos;s log
               </Link>
             ))}
           </nav>
         )}
       </header>
       <Feed initialItems={items} ownerId={viewId} />
-      {!shared && <CaptureButton />}
+      {!viewId && <CaptureButton />}
     </main>
   )
 }
