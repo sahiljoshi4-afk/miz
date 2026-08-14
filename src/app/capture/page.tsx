@@ -68,10 +68,14 @@ function Capture() {
     if (!id) return
     await saveDraft(id, note)
     // Optimistic: the card is on the feed before the network knows.
-    queryClient.setQueryData<FeedItem[]>(['feed'], (old = []) => [
-      { id, cookedAt: draft?.cookedAt ?? new Date().toISOString(), note, photoUrl: src },
-      ...old,
-    ])
+    // Feeds cache per-owner under ['feed', ownerId], so write to every feed cache.
+    queryClient.setQueriesData<FeedItem[]>(
+      { predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'feed' },
+      (old = []) => [
+        { id, cookedAt: draft?.cookedAt ?? new Date().toISOString(), note, photoUrl: src },
+        ...old,
+      ],
+    )
     router.replace('/')
     void flushPending(createClient()).then((n) => {
       if (n > 0) {
