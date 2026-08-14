@@ -14,6 +14,7 @@ async function fetchFeed(ownerId: string): Promise<FeedItem[]> {
     .from('cook')
     .select('id, cooked_at, created_at, note_raw, tags, photo(storage_path), dish(canonical_name, cuisine)')
     .eq('owner_id', ownerId)
+    .neq('source', 'backfill')
     .order('created_at', { ascending: false })
   return Promise.all(
     (data ?? []).map(async (c): Promise<FeedItem> => {
