@@ -63,7 +63,7 @@ export default async function Home({
   const viewId = view && others.some((m) => m.id === view) ? view : undefined
   if (view && viewId === undefined) redirect('/')
 
-  const items = await fetchItems(supabase, viewId)
+  const items = await fetchItems(supabase, viewId ?? user.id)
 
   const base = 'font-mono text-[0.7rem] uppercase tracking-[0.14em] px-2 py-1'
   const active = `${base} bg-ink text-paper`
@@ -95,7 +95,7 @@ export default async function Home({
           </nav>
         )}
       </header>
-      <Feed initialItems={items} ownerId={viewId} />
+      <Feed initialItems={items} ownerId={viewId ?? user.id} isOwn={!viewId} />
       {!viewId && <CaptureButton />}
     </main>
   )

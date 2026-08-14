@@ -219,6 +219,7 @@ export async function POST(req: Request) {
     .from('cook')
     .select(select)
     .eq('enrichment_status', 'queued')
+    .eq('owner_id', user.id)
     .order('cooked_at', { ascending: true })
     .limit(2)
   if (cooks == null) return Response.json({ error: 'sweep failed' }, { status: 500 })
