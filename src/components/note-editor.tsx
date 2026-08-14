@@ -30,6 +30,8 @@ export function NoteEditor({ cookId, initialNote }: { cookId: string; initialNot
       body: JSON.stringify({ cookId }),
     }).catch(() => {})
     router.refresh()
+    setBusy(false)
+    setOpen(false)
   }
 
   if (!open) {
@@ -46,6 +48,7 @@ export function NoteEditor({ cookId, initialNote }: { cookId: string; initialNot
   return (
     <div className="mt-3">
       <textarea
+        aria-label="Edit note"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         className="h-40 w-full resize-none border border-hairline bg-transparent p-3 text-lg leading-snug focus:outline-none"
