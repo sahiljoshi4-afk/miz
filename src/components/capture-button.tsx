@@ -102,9 +102,6 @@ export function CaptureButton() {
             {error && (
               <p className="px-1 text-sm text-graphite">Couldn&apos;t save the draft — try again</p>
             )}
-            {backfillError && (
-              <p className="px-1 text-sm text-graphite">{backfillError}</p>
-            )}
             <button
               onClick={() => cameraInputRef.current?.click()}
               className="h-12 bg-ink text-lg text-paper"
@@ -162,6 +159,11 @@ export function CaptureButton() {
       {progress && (
         <p className="absolute right-0 bottom-20 font-mono text-[0.7rem] text-graphite">
           {progress}
+        </p>
+      )}
+      {backfillError && (
+        <p className="absolute right-0 bottom-20 font-mono text-[0.7rem] text-graphite">
+          {backfillError}
         </p>
       )}
     </div>

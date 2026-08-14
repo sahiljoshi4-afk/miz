@@ -1,7 +1,7 @@
 import { createServerClient } from '@/lib/supabase/server'
 import { isAllowedEmail } from '@/lib/auth'
 import { COOKS_BUCKET, cookPhotoPath } from '@/lib/queue'
-import { enrichCookWith, writeEnrichment, type CookRow, type Supabase } from '@/lib/enrichment'
+import { enrichCookWith, writeEnrichment, type CookRow } from '@/lib/enrichment'
 
 // Backfill enriches inline per chunk of 3 (vision + storage uploads), so it
 // needs the long function budget.
