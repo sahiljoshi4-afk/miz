@@ -5,6 +5,7 @@ import { ensureProfile, isAllowedEmail } from '@/lib/auth'
 import { COOKS_BUCKET } from '@/lib/queue'
 import { CookDate } from '@/components/cook-date'
 import { CuisineTag } from '@/components/cuisine-tag'
+import { NoteEditor } from '@/components/note-editor'
 import { dishMeta } from '@/lib/feed'
 
 const SIGNED_URL_SECONDS = 60 * 60 * 24 * 7 // 7 days; refreshed whenever the feed refetches
@@ -18,16 +19,23 @@ export default async function CookPage({ params }: { params: Promise<{ id: strin
 
   const { data: cook } = await supabase
     .from('cook')
-    .select('id, cooked_at, note_raw, tags, extraction, photo(storage_path), dish(canonical_name, cuisine)')
+    .select(
+      'id, cooked_at, owner_id, enrichment_status, note_raw, tags, extraction, photo(storage_path), dish(canonical_name, cuisine)',
+    )
     .eq('id', id)
     .maybeSingle()
   if (!cook) notFound()
+
+  const isOwner = cook.owner_id === data.user?.id
 
   const cleanedNote =
     typeof cook.extraction?.cleaned_note === 'string' && cook.extraction.cleaned_note.length > 0
       ? cook.extraction.cleaned_note
       : null
-  const mainNote = cleanedNote ?? cook.note_raw
+  // While re-enrichment is queued the stored cleaned note is stale — show the
+  // just-edited raw text until the sweep lands.
+  const mainNote =
+    cook.enrichment_status === 'queued' ? cook.note_raw : cleanedNote ?? cook.note_raw
 
   const { dishName, cuisine } = dishMeta(cook.dish)
   const photo = cook.photo?.[0]
@@ -83,6 +91,7 @@ export default async function CookPage({ params }: { params: Promise<{ id: strin
           Techniques: {cook.extraction.techniques.join(', ')}
         </p>
       ) : null}
+      {isOwner && <NoteEditor cookId={cook.id} initialNote={cook.note_raw} />}
     </main>
   )
 }
