@@ -4,14 +4,18 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import exifr from 'exifr'
 import { createDraft } from '@/lib/db'
+import { runBackfill } from '@/lib/backfill-client'
 
 export function CaptureButton() {
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const libraryInputRef = useRef<HTMLInputElement>(null)
+  const backfillInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const [error, setError] = useState(false)
   const [open, setOpen] = useState(false)
   const [visible, setVisible] = useState(true)
+  const [backfillError, setBackfillError] = useState<string | null>(null)
+  const [progress, setProgress] = useState<string | null>(null)
 
   // Scroll-aware FAB: fade out while scrolling, back ~250ms after it stops.
   // Reduced motion: skip the transitions entirely, stay visible.
@@ -63,6 +67,25 @@ export function CaptureButton() {
     void start(file)
   }
 
+  async function onBackfill(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+    e.target.value = '' // allow re-selecting the same photos
+    if (files.length === 0) return
+    setOpen(false)
+    setBackfillError(null)
+    setProgress('Backfilled 0/0…')
+    try {
+      const imported = await runBackfill(files, (done, total) =>
+        setProgress(`Backfilled ${done}/${total}…`),
+      )
+      setProgress(`Imported ${imported} photos`)
+      setTimeout(() => setProgress(null), 4000)
+    } catch {
+      setProgress(null)
+      setBackfillError("Couldn't import those photos — try again")
+    }
+  }
+
   return (
     <div
       className={`fixed right-5 bottom-[max(env(safe-area-inset-bottom),1.25rem)] z-10 transition-opacity ${visible ? 'opacity-100' : 'opacity-0'}`}
@@ -90,6 +113,12 @@ export function CaptureButton() {
               className="h-12 border border-ink text-lg text-ink"
             >
               Upload
+            </button>
+            <button
+              onClick={() => backfillInputRef.current?.click()}
+              className="h-12 border border-ink text-lg text-ink"
+            >
+              Backfill
             </button>
           </div>
         </>
@@ -119,6 +148,24 @@ export function CaptureButton() {
         className="hidden"
         onChange={onFile}
       />
+      <input
+        ref={backfillInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={onBackfill}
+      />
+      {progress && (
+        <p className="absolute right-0 bottom-20 font-mono text-[0.7rem] text-graphite">
+          {progress}
+        </p>
+      )}
+      {backfillError && (
+        <p className="absolute right-0 bottom-20 font-mono text-[0.7rem] text-graphite">
+          {backfillError}
+        </p>
+      )}
     </div>
   )
 }
